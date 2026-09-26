@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>中学英語ノート</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAF6EC; --ink:#233240; --line:#D9CFB8; --coral:#E8603C;
+  --coral-soft:#FBE3D6; --good:#3E7A57; --good-soft:#E1F0E5; --card:#FFFFFF;
+  padding-top: env(safe-area-inset-top,0px); padding-bottom: env(safe-area-inset-bottom,0px);
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--paper:#1B2027;--ink:#EDE6D6;--line:#3A4048;--card:#242A32;--coral-soft:#3A2A22;--good-soft:#1F2E24;}
+}
+:root[data-theme="dark"]{--paper:#1B2027;--ink:#EDE6D6;--line:#3A4048;--card:#242A32;--coral-soft:#3A2A22;--good-soft:#1F2E24;}
+*{box-sizing:border-box;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Noto Sans JP',sans-serif;
+  background-image:repeating-linear-gradient(var(--paper) 0 34px, var(--line) 34px 35px);
+  min-height:100%;}
+h1,h2,.brand{font-family:'Zen Maru Gothic',sans-serif;}
+header{padding:18px 20px 8px;padding-top:calc(18px + env(safe-area-inset-top,0px));}
+.brand{font-size:1.4rem;font-weight:700;}
+.sub{font-size:.85rem;opacity:.7;margin-top:2px;}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px 40px;}
+.tabbar{display:flex;gap:6px;margin:14px 0;flex-wrap:wrap;}
+.tab{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;
+  padding:8px 16px;font-size:.9rem;font-family:'Noto Sans JP';cursor:pointer;font-weight:500;}
+.tab.active{background:var(--coral);border-color:var(--coral);color:#fff;}
+.grade-row{display:flex;gap:8px;}
+.grade-row .tab{flex:1;text-align:center;}
+.section{display:none;}
+.section.active{display:block;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;margin-top:10px;}
+.flash{min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;user-select:none;gap:10px;}
+.flash .en{font-size:1.7rem;font-weight:700;}
+.flash .jp{font-size:1.1rem;color:var(--coral);display:none;}
+.flash.flipped .jp{display:block;}
+.flash .hint{font-size:.75rem;opacity:.55;margin-top:4px;}
+.rowbtn{display:flex;gap:10px;margin-top:14px;}
+button.act{flex:1;border:none;border-radius:10px;padding:11px;font-size:.95rem;font-weight:500;
+  background:var(--ink);color:var(--paper);cursor:pointer;font-family:'Noto Sans JP';}
+button.act.ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink);}
+.progress{font-size:.8rem;opacity:.65;text-align:center;margin-top:8px;}
+.q-title{font-weight:700;font-size:1.05rem;margin-bottom:4px;}
+.q-count{font-size:.78rem;opacity:.6;margin-bottom:14px;}
+.choices{display:flex;flex-direction:column;gap:10px;}
+.choice{border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:12px 14px;
+  text-align:left;font-size:.95rem;cursor:pointer;color:var(--ink);font-family:'Noto Sans JP';}
+.choice.correct{background:var(--good-soft);border-color:var(--good);}
+.choice.wrong{background:var(--coral-soft);border-color:var(--coral);}
+.result{text-align:center;padding:10px 0;}
+.result .big{font-size:2.2rem;font-weight:700;color:var(--coral);font-family:'Zen Maru Gothic';}
+.stats{display:flex;gap:10px;margin-top:16px;}
+.stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;}
+.stat .n{font-size:1.5rem;font-weight:700;color:var(--coral);font-family:'Zen Maru Gothic';}
+.stat .l{font-size:.72rem;opacity:.65;margin-top:2px;}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="brand">中学英語ノート</div>
+  <div class="sub">単語・文法・クイズで学年ごとに練習しよう</div>
+</header>
+<div class="wrap">
+  <div class="grade-row" id="gradeRow"></div>
+  <div class="tabbar" id="modeRow"></div>
+
+  <section class="section" id="sec-words">
+    <div class="card flash" id="flashCard">
+      <div class="en" id="flashEn">-</div>
+      <div class="jp" id="flashJp">-</div>
+      <div class="hint">タップして意味を表示</div>
+    </div>
+    <div class="rowbtn">
+      <button class="act ghost" id="flashPrev">← 前へ</button>
+      <button class="act" id="flashNext">次へ →</button>
+    </div>
+    <div class="progress" id="flashProgress"></div>
+  </section>
+
+  <section class="section" id="sec-wordquiz">
+    <div class="card" id="wqCard"></div>
+  </section>
+
+  <section class="section" id="sec-grammar">
+    <div class="card" id="gCard"></div>
+  </section>
+
+  <section class="section" id="sec-stats">
+    <div class="card">
+      <div class="q-title">きろく</div>
+      <div class="stats" id="statsBox"></div>
+      <div class="rowbtn"><button class="act ghost" id="resetBtn">記録をリセット</button></div>
+    </div>
+  </section>
+</div>
+
+<script>
+// ---- Grade 1: large combinatorial question bank (1000+) ----
+const NOUNS1=[["pen","ペン"],["pencil","鉛筆"],["eraser","消しゴム"],["notebook","ノート"],["bag","かばん"],["chair","いす"],["desk","机"],["window","窓"],["door","ドア"],["wall","壁"],["clock","時計"],["key","鍵"],["phone","電話"],["computer","コンピューター"],["camera","カメラ"],["bicycle","自転車"],["car","車"],["bus","バス"],["train","電車"],["ship","船"],["plane","飛行機"],["ball","ボール"],["kite","凧"],["doll","人形"],["robot","ロボット"],["guitar","ギター"],["piano","ピアノ"],["drum","ドラム"],["flower","花"],["tree","木"],["mountain","山"],["river","川"],["lake","湖"],["island","島"],["cloud","雲"],["star","星"],["bird","鳥"],["rabbit","うさぎ"],["horse","馬"],["cow","牛"],["pig","豚"],["duck","あひる"],["monkey","猿"],["elephant","象"],["tiger","虎"],["lion","ライオン"],["bear","くま"],["snake","へび"],["frog","かえる"],["ant","あり"],["bee","はち"],["spider","くも"],["orange","オレンジ"],["banana","バナナ"],["grape","ぶどう"],["strawberry","いちご"],["onion","玉ねぎ"],["carrot","にんじん"],["egg","卵"],["cup","カップ"],["plate","皿"],["bowl","ボウル"],["spoon","スプーン"],["fork","フォーク"],["bottle","びん"],["box","箱"],["toy","おもちゃ"],["gift","贈り物"],["stamp","切手"],["ticket","切符"]];
+const VERBS1=[["play","遊ぶ"],["walk","歩く"],["talk","話す"],["study","勉強する"],["watch","見る"],["wash","洗う"],["fix","直す"],["teach","教える"],["help","手伝う"],["visit","訪れる"],["clean","掃除する"],["cook","料理する"],["open","開ける"],["close","閉める"],["listen","聞く"],["practice","練習する"],["answer","答える"],["ask","尋ねる"],["call","電話する"],["carry","運ぶ"],["copy","写す"],["cry","泣く"],["dance","踊る"],["enjoy","楽しむ"],["finish","終える"],["jump","跳ぶ"],["kick","蹴る"],["live","住む"],["love","愛する"],["paint","絵を描く"],["brush","磨く"],["wave","手を振る"]];
+const ADJ1=[["tall","背が高い"],["small","小さい"],["long","長い"],["short","短い"],["old","古い・年をとった"],["young","若い"],["strong","強い"],["fast","速い"],["slow","遅い"],["high","高い"],["low","低い"],["cold","寒い・冷たい"],["warm","暖かい"],["cheap","安い"],["clean","きれいな"]];
+const UNCOUNT1=[["water","水"],["milk","牛乳"],["rice","米・ご飯"],["money","お金"],["time","時間"],["homework","宿題"],["tea","紅茶"],["coffee","コーヒー"],["bread","パン"],["juice","ジュース"]];
+const EXTRA1=[["today","今日"],["tomorrow","明日"],["yesterday","昨日"],["morning","朝"],["night","夜"],["happy","幸せな"],["sad","悲しい"],["hungry","お腹が空いた"],["tired","疲れた"],["busy","忙しい"],["easy","簡単な"],["difficult","難しい"],["important","大切な"],["favorite","お気に入りの"],["famous","有名な"]];
+const VOCAB1=[...NOUNS1,...VERBS1,...ADJ1,...UNCOUNT1,...EXTRA1];
+function sform(w){ if(/[sxz]$/.test(w)||/(ch|sh)$/.test(w)) return w+'es'; if(/[^aeiou]y$/.test(w)) return w.slice(0,-1)+'ies'; return w+'s'; }
+function mkQ(q,correct,wrongs){ const opts=shuffle([correct,...wrongs]); return {q,c:opts,a:opts.indexOf(correct)}; }
+const SUBJ1=[["I",false],["You",false],["We",false],["They",false],["The students",false],["We all",false],["He",true],["She",true],["It",true],["Tom",true],["My sister",true],["Ken",true]];
+function buildGrammar1(){
+  let g=[];
+  NOUNS1.forEach(([w])=>{
+    const art=/^[aeiou]/i.test(w)?'an':'a', wrongArt=art==='a'?'an':'a';
+    g.push(mkQ(`I have ___ ${w}.`,art,[wrongArt]));
+    const pl=sform(w), wrongPl=(pl===w+'s')?w+'es':w+'s';
+    g.push(mkQ(`There are two ___.`,pl,[wrongPl]));
+    g.push(mkQ(`___ is my ${w}.`,'This',['These']));
+    g.push(mkQ(`___ are my ${pl}.`,'These',['This']));
+    g.push(mkQ(`I have ___ ${pl}.`,'some',['any']));
+    g.push(mkQ(`I don't have ___ ${pl}.`,'any',['some']));
+    g.push(mkQ(`I don't have ___ ${pl}.`,'many',['much']));
+  });
+  UNCOUNT1.forEach(([w])=>{ g.push(mkQ(`I don't have ___ ${w}.`,'much',['many'])); });
+  VERBS1.forEach(([v])=>{
+    const s3=sform(v);
+    SUBJ1.forEach(([subj,needsS])=>{
+      const correct=needsS?s3:v, wrong=needsS?v:s3;
+      g.push(mkQ(`${subj} ___ every day.`,correct,[wrong]));
+    });
+  });
+  ADJ1.forEach(([a])=>{
+    g.push(mkQ(`This is ___ than that.`,a+'er',[a]));
+    g.push(mkQ(`This is the ___ one.`,a+'est',[a+'er']));
+  });
+  const FIXED1=[
+   {q:"I ___ happy.",c:["am","is","are"],a:0},{q:"You ___ my friend.",c:["is","are","am"],a:1},
+   {q:"He ___ a teacher.",c:["is","am","are"],a:0},{q:"She ___ kind.",c:["are","am","is"],a:2},
+   {q:"It ___ cold today.",c:["is","are","am"],a:0},{q:"We ___ students.",c:["is","am","are"],a:2},
+   {q:"They ___ happy.",c:["is","am","are"],a:2},{q:"The dog ___ cute.",c:["are","is","am"],a:1},
+   {q:"My parents ___ busy.",c:["is","are","am"],a:1},{q:"There ___ two cats.",c:["is","are","am"],a:1},
+   {q:"I ___ a bike.",c:["has","have","am"],a:1},{q:"She ___ a cat.",c:["have","has","is"],a:1},
+   {q:"They ___ many books.",c:["has","have","is"],a:1},{q:"He ___ a sister.",c:["have","has","is"],a:1},
+   {q:"We ___ a big house.",c:["has","have","is"],a:1},{q:"You ___ a nice bag.",c:["has","have","is"],a:1},
+   {q:"My brother ___ a car.",c:["have","has","is"],a:1},{q:"The students ___ a test today.",c:["has","have","is"],a:1},
+   {q:"It ___ four legs.",c:["have","has","is"],a:1},{q:"I ___ two dogs.",c:["has","have","is"],a:0},
+   {q:"___ you like music?",c:["Do","Does","Is"],a:0},{q:"___ she play tennis?",c:["Do","Does","Is"],a:1},
+   {q:"___ they go to school?",c:["Do","Does","Is"],a:0},{q:"___ he like dogs?",c:["Do","Does","Is"],a:1},
+   {q:"___ your mother cook dinner?",c:["Do","Does","Is"],a:1},{q:"___ we need a pen?",c:["Do","Does","Is"],a:0},
+   {q:"___ it rain a lot here?",c:["Do","Does","Is"],a:1},{q:"I ___ not like coffee.",c:["do","does","am"],a:0},
+   {q:"She ___ not like coffee.",c:["do","does","am"],a:1},{q:"They ___ not have time.",c:["do","does","am"],a:0},
+   {q:"I can ___ fast.",c:["run","runs","running"],a:0},{q:"She can ___ well.",c:["swims","swim","swimming"],a:1},
+   {q:"He can ___ the piano.",c:["play","plays","playing"],a:0},{q:"They can ___ English.",c:["speak","speaks","spoken"],a:0},
+   {q:"We can ___ soccer.",c:["play","plays","playing"],a:0},{q:"You can ___ this book.",c:["read","reads","reading"],a:0},
+   {q:"My dog can ___ high.",c:["jump","jumps","jumping"],a:0},{q:"The bird can ___.",c:["fly","flies","flying"],a:0},
+   {q:"I can ___ a bike.",c:["ride","rides","riding"],a:0},{q:"She can ___ a song.",c:["sing","sings","singing"],a:0},
+   {q:"I ___ happy yesterday.",c:["was","were","am"],a:0},{q:"You ___ late.",c:["was","were","am"],a:1},
+   {q:"He ___ at home.",c:["was","were","am"],a:0},{q:"They ___ at school.",c:["was","were","am"],a:1},
+   {q:"We ___ tired.",c:["was","were","am"],a:1},{q:"She ___ sick.",c:["was","were","am"],a:0},
+   {q:"It ___ sunny.",c:["was","were","am"],a:0},{q:"The children ___ happy.",c:["was","were","am"],a:1},
+   {q:"My father ___ busy.",c:["was","were","am"],a:0},{q:"There ___ many people.",c:["was","were","am"],a:1},
+   {q:"I get up ___ 7 o'clock.",c:["at","in","on"],a:0},{q:"We have lunch ___ noon.",c:["at","in","on"],a:0},
+   {q:"School starts ___ the morning.",c:["in","at","on"],a:0},{q:"I was born ___ 2012.",c:["in","on","at"],a:0},
+   {q:"My birthday is ___ May.",c:["in","on","at"],a:0},{q:"See you ___ Monday.",c:["on","in","at"],a:0},
+   {q:"We have a test ___ Friday.",c:["on","in","at"],a:0},{q:"The cat is ___ the box.",c:["in","on","at"],a:0},
+   {q:"The book is ___ the desk.",c:["on","in","at"],a:0},{q:"There is a picture ___ the wall.",c:["on","in","at"],a:0},
+   {q:"I live ___ Tokyo.",c:["in","on","at"],a:0},{q:"She is ___ home now.",c:["at","in","on"],a:0},
+   {q:"We go to school ___ bus.",c:["by","on","in"],a:0},{q:"I go to bed ___ night.",c:["at","in","on"],a:0},
+   {q:"The party is ___ Saturday.",c:["on","in","at"],a:0},{q:"He is good ___ soccer.",c:["at","in","on"],a:0},
+   {q:"I'm interested ___ music.",c:["in","on","at"],a:0},{q:"Thank you ___ your help.",c:["for","to","at"],a:0},
+   {q:"Listen ___ me.",c:["to","at","in"],a:0},{q:"Look ___ the picture.",c:["at","in","on"],a:0},
+   {q:"We arrived ___ the station.",c:["at","in","on"],a:0},{q:"I'm afraid ___ dogs.",c:["of","in","at"],a:0},
+   {q:"This present is ___ you.",c:["for","to","of"],a:0},{q:"She is different ___ me.",c:["from","to","at"],a:0},
+   {q:"Wait ___ me here.",c:["for","to","at"],a:0},
+   {q:"___ is your name?",c:["What","Who","Where"],a:0},{q:"___ is that man?",c:["Who","What","When"],a:0},
+   {q:"___ do you live?",c:["Where","What","Who"],a:0},{q:"___ is your birthday?",c:["When","Where","Who"],a:0},
+   {q:"___ is this bag?",c:["Whose","Who","What"],a:0},{q:"___ old are you?",c:["How","What","Which"],a:0},
+   {q:"___ do you go to school?",c:["How","What","When"],a:0},{q:"___ book is this, yours or mine?",c:["Which","What","Who"],a:0},
+   {q:"___ is it today?",c:["What","Who","Where"],a:0},{q:"___ many books do you have?",c:["How","What","Which"],a:0},
+   {q:"___ much is this pen?",c:["How","What","Which"],a:0},{q:"___ is your favorite color?",c:["What","Who","When"],a:0},
+   {q:"___ did you go there?",c:["Why","What","Who"],a:0},{q:"___ can help me?",c:["Who","What","Which"],a:0},
+   {q:"___ is the library?",c:["Where","What","Who"],a:0},{q:"___ time is it now?",c:["What","Who","Where"],a:0},
+   {q:"___ is your teacher?",c:["Who","What","Where"],a:0},{q:"___ do you like it?",c:["Why","What","Who"],a:0},
+   {q:"___ pen is this?",c:["Whose","Who","What"],a:0},{q:"___ season do you like?",c:["Which","What","Who"],a:0},
+   {q:"___ is your best friend?",c:["Who","What","Where"],a:0},{q:"___ did you get up?",c:["When","What","Who"],a:0},
+   {q:"___ far is the station?",c:["How","What","Which"],a:0},{q:"___ do you come to school?",c:["How","What","When"],a:0},
+   {q:"___ is your dream?",c:["What","Who","Where"],a:0}
+  ];
+  return g.concat(FIXED1);
+}
+const GRAMMAR1=buildGrammar1();
+
+const DATA = {
+1:{ words:VOCAB1, grammar:GRAMMAR1 },
+2:{ words:[["visit","訪れる"],["become","〜になる"],["decide","決める"],["difficult","難しい"],["famous","有名な"],["culture","文化"],["experience","経験"],["improve","上達する"],["interesting","面白い"],["remember","覚えている"],["already","すでに"],["borrow","借りる"],["explain","説明する"],["future","未来"],["believe","信じる"]],
+   grammar:[
+    {q:"I ___ my homework yesterday.",c:["did","do","does"],a:0},
+    {q:"She is ___ than me.",c:["tall","taller","tallest"],a:1},
+    {q:"This book is ___ interesting.",c:["very","more","most"],a:0},
+    {q:"He can ___ swim well.",c:["to","-","swims"],a:1},
+    {q:"I want ___ a doctor.",c:["be","to be","being"],a:1},
+    {q:"We ___ studying when he called.",c:["was","were","are"],a:1},
+    {q:"This is the book ___ I bought.",c:["who","which","whose"],a:1},
+    {q:"You must ___ your homework.",c:["do","did","does"],a:0}
+   ]},
+3:{ words:[["achieve","達成する"],["opportunity","機会"],["environment","環境"],["technology","技術"],["opinion","意見"],["responsibility","責任"],["society","社会"],["communicate","伝え合う"],["reduce","減らす"],["various","様々な"],["global","地球規模の"],["solution","解決策"],["encourage","励ます"],["increase","増える・増やす"],["necessary","必要な"]],
+   grammar:[
+    {q:"This letter was ___ by him.",c:["write","written","wrote"],a:1},
+    {q:"I have ___ finished my homework.",c:["already","yet","ago"],a:0},
+    {q:"If it ___ tomorrow, I'll stay home.",c:["rain","rains","rained"],a:1},
+    {q:"The movie ___ by many people.",c:["is loved","loves","loving"],a:0},
+    {q:"She said she ___ tired.",c:["is","was","be"],a:1},
+    {q:"This is the house ___ I was born.",c:["which","where","who"],a:1},
+    {q:"I have lived here ___ five years.",c:["for","since","during"],a:0},
+    {q:"He asked me ___ I was busy.",c:["that","if","what"],a:1}
+   ]}
+};
+let grade=1, mode='words';
+let fi=0, wqi=0, gi=0, wqScore=0, gScore=0, wqOrder=[], gOrder=[];
+
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function loadStats(){try{return JSON.parse(localStorage.getItem('eigoStats')||'{}')}catch(e){return{}}}
+function saveStats(s){try{localStorage.setItem('eigoStats',JSON.stringify(s))}catch(e){}}
+
+function setGrade(g){grade=g;fi=0;renderGradeTabs();resetWordQuiz();resetGrammar();renderSection();}
+function setMode(m){mode=m;renderModeTabs();renderSection();}
+
+function renderGradeTabs(){
+  const el=document.getElementById('gradeRow');
+  el.innerHTML='';
+  [1,2,3].forEach(g=>{
+    const b=document.createElement('button');
+    b.className='tab'+(g===grade?' active':'');
+    b.textContent=g+'年';
+    b.onclick=()=>setGrade(g);
+    el.appendChild(b);
+  });
+}
+function renderModeTabs(){
+  const el=document.getElementById('modeRow');
+  el.innerHTML='';
+  [['words','単語カード'],['wordquiz','単語クイズ'],['grammar','文法クイズ'],['stats','きろく']].forEach(([m,l])=>{
+    const b=document.createElement('button');
+    b.className='tab'+(m===mode?' active':'');
+    b.textContent=l;
+    b.onclick=()=>setMode(m);
+    el.appendChild(b);
+  });
+}
+function renderSection(){
+  ['words','wordquiz','grammar','stats'].forEach(m=>{
+    document.getElementById('sec-'+m).classList.toggle('active', m===mode);
+  });
+  if(mode==='words') renderFlash();
+  if(mode==='wordquiz') renderWordQuiz();
+  if(mode==='grammar') renderGrammar();
+  if(mode==='stats') renderStats();
+}
+
+// ---- Flashcards ----
+function renderFlash(){
+  const list=DATA[grade].words;
+  const [en,jp]=list[fi];
+  document.getElementById('flashEn').textContent=en;
+  document.getElementById('flashJp').textContent=jp;
+  document.getElementById('flashCard').classList.remove('flipped');
+  document.getElementById('flashProgress').textContent=(fi+1)+' / '+list.length;
+}
+document.getElementById('flashCard').onclick=()=>document.getElementById('flashCard').classList.toggle('flipped');
+document.getElementById('flashNext').onclick=()=>{fi=(fi+1)%DATA[grade].words.length;renderFlash();};
+document.getElementById('flashPrev').onclick=()=>{const n=DATA[grade].words.length;fi=(fi-1+n)%n;renderFlash();};
+
+// ---- Word quiz ----
+const SESSION_CAP=20;
+function resetWordQuiz(){wqi=0;wqScore=0;const idxs=DATA[grade].words.map((_,i)=>i);wqOrder=shuffle(idxs).slice(0,Math.min(SESSION_CAP,idxs.length));}
+function wordChoices(idx){
+  const list=DATA[grade].words;
+  const correct=list[idx][1];
+  let pool=list.filter((_,i)=>i!==idx).map(w=>w[1]);
+  pool=shuffle(pool).slice(0,3);
+  return shuffle([correct,...pool]);
+}
+function renderWordQuiz(){
+  const card=document.getElementById('wqCard');
+  if(wqi>=wqOrder.length){
+    card.innerHTML=`<div class="result"><div>結果</div><div class="big">${wqScore} / ${wqOrder.length}</div></div>
+    <div class="rowbtn"><button class="act" id="wqRetry">もう一度</button></div>`;
+    document.getElementById('wqRetry').onclick=()=>{recordScore('word'+grade,wqScore,wqOrder.length);resetWordQuiz();renderWordQuiz();};
+    recordScore('word'+grade,wqScore,wqOrder.length);
+    return;
+  }
+  const idx=wqOrder[wqi];
+  const en=DATA[grade].words[idx][0];
+  const choices=wordChoices(idx);
+  card.innerHTML=`<div class="q-title">${en} の意味は？</div>
+   <div class="q-count">問題 ${wqi+1} / ${wqOrder.length}（全${DATA[grade].words.length}語からランダム出題）</div>
+   <div class="choices">${choices.map(c=>`<div class="choice" data-c="${c}">${c}</div>`).join('')}</div>`;
+  card.querySelectorAll('.choice').forEach(el=>{
+    el.onclick=()=>{
+      const chosen=el.dataset.c;
+      const correct=DATA[grade].words[idx][1];
+      card.querySelectorAll('.choice').forEach(c=>{
+        if(c.dataset.c===correct) c.classList.add('correct');
+        else if(c===el) c.classList.add('wrong');
+        c.onclick=null;
+      });
+      if(chosen===correct) wqScore++;
+      setTimeout(()=>{wqi++;renderWordQuiz();},650);
+    };
+  });
+}
+
+// ---- Grammar quiz ----
+function resetGrammar(){gi=0;gScore=0;const idxs=DATA[grade].grammar.map((_,i)=>i);gOrder=shuffle(idxs).slice(0,Math.min(SESSION_CAP,idxs.length));}
+function renderGrammar(){
+  const card=document.getElementById('gCard');
+  if(gi>=gOrder.length){
+    card.innerHTML=`<div class="result"><div>結果</div><div class="big">${gScore} / ${gOrder.length}</div></div>
+    <div class="rowbtn"><button class="act" id="gRetry">もう一度</button></div>`;
+    document.getElementById('gRetry').onclick=()=>{recordScore('gram'+grade,gScore,gOrder.length);resetGrammar();renderGrammar();};
+    recordScore('gram'+grade,gScore,gOrder.length);
+    return;
+  }
+  const item=DATA[grade].grammar[gOrder[gi]];
+  card.innerHTML=`<div class="q-title">${item.q}</div>
+   <div class="q-count">問題 ${gi+1} / ${gOrder.length}（全${DATA[grade].grammar.length}問からランダム出題）</div>
+   <div class="choices">${item.c.map(c=>`<div class="choice" data-c="${c}">${c}</div>`).join('')}</div>`;
+  card.querySelectorAll('.choice').forEach((el,i)=>{
+    el.onclick=()=>{
+      card.querySelectorAll('.choice').forEach((c,j)=>{
+        if(j===item.a) c.classList.add('correct');
+        else if(j===i) c.classList.add('wrong');
+        c.onclick=null;
+      });
+      if(i===item.a) gScore++;
+      setTimeout(()=>{gi++;renderGrammar();},650);
+    };
+  });
+}
+
+// ---- Stats ----
+function recordScore(key,score,total){
+  const s=loadStats();
+  const rate=Math.round(score/total*100);
+  if(!s[key] || s[key].best<rate){s[key]={best:rate,last:rate}}
+  else{s[key].last=rate}
+  saveStats(s);
+}
+function renderStats(){
+  const s=loadStats();
+  const box=document.getElementById('statsBox');
+  box.innerHTML='';
+  [1,2,3].forEach(g=>{
+    const w=s['word'+g], gr=s['gram'+g];
+    box.insertAdjacentHTML('beforeend',
+    `<div class="stat"><div class="n">${w?w.best+'%':'-'}</div><div class="l">${g}年 単語 最高</div></div>`);
+  });
+  const box2=document.createElement('div');
+  box2.className='stats';
+  box2.style.marginTop='10px';
+  [1,2,3].forEach(g=>{
+    const gr=s['gram'+g];
+    box2.insertAdjacentHTML('beforeend',
+    `<div class="stat"><div class="n">${gr?gr.best+'%':'-'}</div><div class="l">${g}年 文法 最高</div></div>`);
+  });
+  box.parentElement.insertBefore(box2, document.getElementById('resetBtn').parentElement);
+}
+document.getElementById('resetBtn').onclick=()=>{
+  try{localStorage.removeItem('eigoStats')}catch(e){}
+  renderStats();
+};
+
+renderGradeTabs();
+renderModeTabs();
+resetWordQuiz();
+resetGrammar();
+renderSection();
+</script>
+</body>
+</html>
